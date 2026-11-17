@@ -1,0 +1,23 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>历史版本 · 经营方法论中枢</title><style>
+:root{font-family:ui-sans-serif,-apple-system,"PingFang SC","Microsoft Yahei",sans-serif;color:#20313b;background:#f3f7f8}
+*{box-sizing:border-box}body{margin:0;min-height:100vh}a{color:#007b75;text-decoration:none}
+main{max-width:1050px;margin:38px auto;padding:0 22px}.auth{max-width:440px;margin:8vh auto;padding:0 20px}
+.card{background:white;border:1px solid #e2eaeb;border-radius:14px;padding:28px;box-shadow:0 9px 34px #29404b0c}
+h1{font-size:26px;margin:0 0 9px}h2{font-size:20px;margin:0 0 15px}p{color:#60717c;line-height:1.6}
+label{display:block;margin:16px 0 5px;font-weight:600;font-size:13px}input,select{width:100%;font:inherit;border:1px solid #cfdddf;border-radius:8px;padding:11px;background:white}
+button,.btn{border:0;background:#007e78;color:white;padding:10px 17px;border-radius:8px;cursor:pointer;font:inherit}
+button.secondary{background:#e5f3f1;color:#006b65}button.warn{background:#aa4f36}
+button:disabled{opacity:.55} .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.row>*{flex:0 0 auto}
+.nav{background:#101f2f;color:white;padding:18px 24px;display:flex;align-items:center;gap:18px}.nav a{color:#d9eeee}
+.muted{color:#73858d;font-size:13px}.err{color:#bc3e24}.good{color:#087e72}
+table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #e7eeee;padding:12px 7px;vertical-align:middle;font-size:14px}th{color:#6b7c85;font-weight:600}
+td button{padding:5px 8px;font-size:12px}td select{min-width:106px;width:auto;padding:5px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){main{margin:18px auto}.card{padding:18px}.grid{grid-template-columns:1fr}.nav{flex-wrap:wrap}}
+</style></head><body><div class="nav"><strong>经营方法论中枢</strong><a href="/">← 返回知识库</a><a id="admin" href="/admin" hidden>账号管理</a></div><main><h1>知识库历史版本</h1><p>每次内容更新都会产生新版本。管理员可恢复旧版本；恢复会再次保存为一个新版本，不会删除既有历史。</p><section class="card"><h2>版本记录</h2><div style="overflow:auto"><table><thead><tr><th>版本</th><th>修改人</th><th>时间</th><th>说明</th><th>操作</th></tr></thead><tbody id="rows"><tr><td>加载中…</td></tr></tbody></table></div></section><section id="preview" class="card" style="margin-top:20px" hidden><h2>版本详情</h2><pre id="details" style="white-space:pre-wrap;word-break:break-all"></pre></section></main><script>
+let csrf='',isAdmin=false;const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function req(url,opt={}){const headers={'content-type':'application/json',...(opt.method&&opt.method!=='GET'?{'x-csrf-token':csrf}:{})};const r=await fetch(url,{credentials:'same-origin',...opt,headers});if(r.status===401){location.assign('/login');throw Error('登录过期')}const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.detail||j.message||'请求失败');return j}
+async function load(){const x=await req('/api/history');$('#rows').innerHTML=x.items.map(a=>'<tr><td>v'+a.version+'</td><td>'+esc(a.author)+'</td><td>'+esc(a.created_at)+'</td><td>'+esc(a.summary)+'</td><td><div class="row"><button class="secondary" data-view="'+a.version+'">查看</button>'+(isAdmin?'<button class="warn" data-restore="'+a.version+'">恢复</button>':'')+'</div></td></tr>').join('')}
+document.addEventListener('click',async e=>{let b=e.target.closest('[data-view],[data-restore]');if(!b)return;try{if(b.dataset.view){let x=await req('/api/history/'+b.dataset.view);$('#preview').hidden=false;$('#details').textContent=JSON.stringify(x.chapters.map(c=>({name:c.name,stages:c.stages.map(s=>({name:s.name,methods:s.methods.length}))})),null,2);$('#preview').scrollIntoView({behavior:'smooth'})}else if(isAdmin&&confirm('确定恢复到 v'+b.dataset.restore+'？此操作将影响整个共享知识库。')){await req('/api/history/'+b.dataset.restore+'/restore',{method:'POST'});await load();alert('历史版本已恢复为最新版本')}}catch(err){alert(err.message)}});
+(async()=>{try{const b=await req('/api/bootstrap');csrf=b.csrf;isAdmin=b.me.role==='admin';$('#admin').hidden=!isAdmin;await load()}catch(e){$('#rows').innerHTML='<tr><td class="err">'+esc(e.message)+'</td></tr>'}})();
+</script></body></html>
